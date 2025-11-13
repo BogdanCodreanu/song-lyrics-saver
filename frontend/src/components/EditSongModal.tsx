@@ -13,7 +13,7 @@ interface IEditSongModalProps {
 
 export default function EditSongModal(props: IEditSongModalProps) {
   const { isOpen, song, onClose } = props;
-  const { fetchSongs } = useSongStore();
+  const { clearCache, refetchSongs } = useSongStore();
 
   const handleSubmit = async (data: SongFormData) => {
     if (!song) return;
@@ -28,8 +28,9 @@ export default function EditSongModal(props: IEditSongModalProps) {
       throw new Error('Failed to update song');
     }
 
-    // Refresh songs list
-    await fetchSongs();
+    // Clear cache and force refetch
+    clearCache();
+    await refetchSongs();
     onClose();
   };
 

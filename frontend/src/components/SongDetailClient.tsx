@@ -10,7 +10,8 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import { CapoeiraSong } from '@/lib/types';
 import EditSongModal from './EditSongModal';
-import ReactPlayer from 'react-player'
+import ReactPlayer from 'react-player';
+import { useSongStore } from '@/lib/store';
 
 interface ISongDetailClientProps {
   song: CapoeiraSong;
@@ -18,8 +19,10 @@ interface ISongDetailClientProps {
 }
 
 export default function SongDetailClient(props: ISongDetailClientProps) {
-  const { song, isAdmin = false } = props;
+  const { song: initialSong, isAdmin = false } = props;
   const router = useRouter();
+  const { clearCache, refetchSongs } = useSongStore();
+  const [song, setSong] = useState(initialSong);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -39,6 +42,11 @@ export default function SongDetailClient(props: ISongDetailClientProps) {
   };
   
   const [activeTab, setActiveTab] = useState<'song' | 'video'>(getInitialTab());
+
+  // Sync song state when prop changes (after edit/refresh)
+  useEffect(() => {
+    setSong(initialSong);
+  }, [initialSong]);
 
   // Fetch presigned URLs for media files
   useEffect(() => {
@@ -81,6 +89,10 @@ export default function SongDetailClient(props: ISongDetailClientProps) {
         throw new Error('Failed to delete song');
       }
 
+      // Clear cache and refetch songs
+      clearCache();
+      await refetchSongs();
+      
       // Navigate back to home
       router.push('/');
     } catch (error) {
@@ -126,21 +138,34 @@ export default function SongDetailClient(props: ISongDetailClientProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl overflow-hidden relative"
+          style={
+            song.imageKey && song.imageKey !== ''
+              ? {
+                  backgroundImage: `url(https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'alemar-capoeira-songs'}.s3.${process.env.NEXT_PUBLIC_AWS_REGION || 'eu-central-1'}.amazonaws.com/${song.imageKey})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                }
+              : undefined
+          }
         >
           <div className="bg-linear-to-r from-orange-500 to-yellow-500 h-3"></div>
           
-          {/* Hero Image Section */}
-          {song.imageKey && song.imageKey !== '' && (
-            <div className="w-full h-96 overflow-hidden bg-zinc-100 dark:bg-zinc-900">
-              <img 
-                src={`https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'alemar-capoeira-songs'}.s3.${process.env.NEXT_PUBLIC_AWS_REGION || 'eu-central-1'}.amazonaws.com/${song.imageKey}`}
-                alt={song.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-          
-          <div className="p-8">
+          {/* Layout wrapper - mobile background image, desktop side-by-side */}
+          <div className="md:flex">
+            {/* Image Section - hidden on mobile (uses background), visible on desktop */}
+            {song.imageKey && song.imageKey !== '' && (
+              <div className="hidden md:block md:w-80 lg:w-96 shrink-0 aspect-2/3 overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+                <img 
+                  src={`https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'alemar-capoeira-songs'}.s3.${process.env.NEXT_PUBLIC_AWS_REGION || 'eu-central-1'}.amazonaws.com/${song.imageKey}`}
+                  alt={song.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            
+            {/* Content Section - with backdrop on mobile for readability */}
+            <div className={`p-8 flex-1 ${song.imageKey && song.imageKey !== '' ? 'bg-white/95 dark:bg-zinc-800/95 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none' : ''}`}>
             <div className="flex justify-between items-start mb-6">
               <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
                 {song.title}
@@ -271,6 +296,7 @@ export default function SongDetailClient(props: ISongDetailClientProps) {
               )}
             </div>
           </div>
+          </div>
         </motion.div>
       </div>
 
@@ -278,7 +304,14 @@ export default function SongDetailClient(props: ISongDetailClientProps) {
       <EditSongModal
         isOpen={isEditModalOpen}
         song={song}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={async () => {
+          setIsEditModalOpen(false);
+          // Refetch the updated song data
+          clearCache();
+          await refetchSongs();
+          // Refresh the page to show updated data
+          router.refresh();
+        }}
       />
 
       {/* Delete Confirmation */}

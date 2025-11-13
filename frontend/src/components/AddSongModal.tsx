@@ -11,7 +11,7 @@ interface IAddSongModalProps {
 
 export default function AddSongModal(props: IAddSongModalProps) {
   const { isOpen, onClose } = props;
-  const { fetchSongs } = useSongStore();
+  const { clearCache, refetchSongs } = useSongStore();
 
   const handleSubmit = async (data: SongFormData) => {
     const response = await fetch('/api/songs', {
@@ -24,8 +24,9 @@ export default function AddSongModal(props: IAddSongModalProps) {
       throw new Error('Failed to create song');
     }
 
-    // Refresh songs list
-    await fetchSongs();
+    // Clear cache and force refetch
+    clearCache();
+    await refetchSongs();
     onClose();
   };
 
