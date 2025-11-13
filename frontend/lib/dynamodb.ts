@@ -1,5 +1,5 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, ScanCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { CapoeiraSong } from './types';
 
 const client = new DynamoDBClient({
@@ -24,6 +24,23 @@ export async function getAllSongs(): Promise<CapoeiraSong[]> {
     return (response.Items || []) as CapoeiraSong[];
   } catch (error) {
     console.error('Error fetching songs from DynamoDB:', error);
+    throw error;
+  }
+}
+
+export async function getSongById(id: string): Promise<CapoeiraSong | null> {
+  try {
+    const command = new GetCommand({
+      TableName: TABLE_NAME,
+      Key: {
+        id: id,
+      },
+    });
+
+    const response = await docClient.send(command);
+    return (response.Item as CapoeiraSong) || null;
+  } catch (error) {
+    console.error('Error fetching song from DynamoDB:', error);
     throw error;
   }
 }

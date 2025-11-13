@@ -1,0 +1,38 @@
+# React Component Conventions
+
+## Component Structure
+
+All React components must follow this structure:
+
+1. The component's props interface must be defined immediately above the component declaration
+2. The interface must be named `I{ComponentName}Props`
+3. The component function must use the format: `function ComponentName(props: IComponentNameProps)`
+
+### Example
+
+```typescript
+interface IButtonProps {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary';
+}
+
+export default function Button(props: IButtonProps) {
+  const { label, onClick, variant = 'primary' } = props;
+  
+  return (
+    <button onClick={onClick} className={variant}>
+      {label}
+    </button>
+  );
+}
+```
+
+### Rules
+
+- Always define the interface directly above the component
+- Always name interfaces with the `I{ComponentName}Props` pattern
+- Always use `(props: IComponentNameProps)` in the function signature
+- Destructure props inside the component body if needed
+- This applies to both default exports and named exports
+

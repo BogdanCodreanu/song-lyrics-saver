@@ -3,6 +3,7 @@ export interface CapoeiraSong {
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
   title: string;
-  lyrics: string;
-  mp3Key: string; // S3 bucket key
+  lyrics?: string;
+  mp3Key?: string; // S3 bucket key
+  mp4Key?: string; // S3 bucket key for video
 }
