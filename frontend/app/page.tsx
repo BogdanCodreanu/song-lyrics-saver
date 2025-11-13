@@ -1,65 +1,132 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState } from 'react';
+import { CapoeiraSong } from '@/lib/types';
 
 export default function Home() {
+  const [songs, setSongs] = useState<CapoeiraSong[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchSongs();
+  }, []);
+
+  const fetchSongs = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/songs');
+      if (!response.ok) {
+        throw new Error('Failed to fetch songs');
+      }
+      const data = await response.json();
+      setSongs(data.songs);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50 dark:from-zinc-900 dark:via-zinc-800 dark:to-zinc-900">
+      <div className="container mx-auto px-4 py-8">
+        <header className="mb-8 text-center">
+          <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
+            🥁 Capoeira Songs
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-zinc-600 dark:text-zinc-400">
+            Collection of traditional capoeira music and lyrics
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        </header>
+
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+            <p className="text-red-800 dark:text-red-200">
+              <strong>Error:</strong> {error}
+            </p>
+          </div>
+        )}
+
+        {!loading && !error && songs.length === 0 && (
+          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-md p-8 text-center">
+            <p className="text-zinc-600 dark:text-zinc-400 text-lg">
+              No songs found. Add your first capoeira song!
+            </p>
+          </div>
+        )}
+
+        {!loading && !error && songs.length > 0 && (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {songs.map((song) => (
+              <div
+                key={song.id}
+                className="bg-white dark:bg-zinc-800 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden"
+              >
+                <div className="bg-gradient-to-r from-orange-500 to-yellow-500 h-2"></div>
+                <div className="p-6">
+                  <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-3">
+                    {song.title}
+                  </h2>
+                  
+                  <div className="mb-4">
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
+                      <strong>Created:</strong> {formatDate(song.createdAt)}
+                    </p>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      <strong>Updated:</strong> {formatDate(song.updatedAt)}
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                      Lyrics:
+                    </h3>
+                    <div className="bg-zinc-50 dark:bg-zinc-900 rounded p-3 max-h-40 overflow-y-auto">
+                      <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
+                        {song.lyrics}
+                      </p>
+                    </div>
+                  </div>
+
+                  {song.mp3Key && (
+                    <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
+                        />
+                      </svg>
+                      <span className="truncate">{song.mp3Key}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
