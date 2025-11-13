@@ -10,7 +10,7 @@
     "test": "jest",
     "synth": "cdk synth --profile bogdan",
     "bootstrap": "cdk bootstrap --profile bogdan",
-    "deploy": "cdk deploy SongLyricsSaverInfraStack --profile bogdan",
+    "deploy": "cdk deploy SongLyricsSaverInfraStack --requireApproval never --profile bogdan",
     "diff": "cdk diff --profile bogdan",
     "destroy": "cdk destroy SongLyricsSaverInfraStack --profile bogdan"
   },

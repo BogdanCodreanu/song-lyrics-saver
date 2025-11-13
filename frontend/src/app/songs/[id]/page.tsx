@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import moment from 'moment';
 import { getSongById } from '@/lib/dynamodb';
 import SongDetailClient from '@/components/SongDetailClient';
+import { currentUser } from '@clerk/nextjs/server';
 
 interface ISongDetailPageProps {
   params: Promise<{ id: string }>;
@@ -15,6 +15,11 @@ export default async function SongDetailPage(props: ISongDetailPageProps) {
     notFound();
   }
 
-  return <SongDetailClient song={song} />;
+  const user = await currentUser();
+  const isAdmin = user?.publicMetadata?.isAdmin === true;
+
+  console.log(song);
+
+  return <SongDetailClient song={song} isAdmin={isAdmin} />;
 }
 

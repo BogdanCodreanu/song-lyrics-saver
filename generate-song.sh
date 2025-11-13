@@ -83,32 +83,21 @@ generate_random_song() {
     local id=$(generate_uuid)
     local timestamp=$(get_timestamp)
     local title="${SONG_TITLES[$RANDOM % ${#SONG_TITLES[@]}]}"
-    local has_lyrics=$((RANDOM % 4)) # 75% chance of having lyrics
-    local has_mp3=$((RANDOM % 3))    # 66% chance of having mp3
-    local has_mp4=$((RANDOM % 4))    # 25% chance of having mp4
     
-    # Build JSON item
+    # Build JSON item with all fields prefilled
     local json="{\"id\": {\"S\": \"$id\"}, \"createdAt\": {\"S\": \"$timestamp\"}, \"updatedAt\": {\"S\": \"$timestamp\"}, \"title\": {\"S\": \"$title\"}"
     
-    # Add lyrics (75% chance)
-    if [ $has_lyrics -gt 0 ]; then
-        local lyrics="${LYRICS_SAMPLES[$RANDOM % ${#LYRICS_SAMPLES[@]}]}"
-        # Escape newlines and quotes for JSON
-        lyrics=$(echo "$lyrics" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')
-        json="$json, \"lyrics\": {\"S\": \"$lyrics\"}"
-    fi
+    # Always add lyrics with "SAMPLE" value
+    json="$json, \"lyrics\": {\"S\": \"SAMPLE\"}"
     
-    # Add mp3Key (66% chance)
-    if [ $has_mp3 -gt 0 ]; then
-        local mp3key="songs/${id}.mp3"
-        json="$json, \"mp3Key\": {\"S\": \"$mp3key\"}"
-    fi
+    # Always add audioKey (empty by default)
+    json="$json, \"audioKey\": {\"S\": \"\"}"
     
-    # Add mp4Key (25% chance)
-    if [ $has_mp4 -eq 3 ]; then
-        local mp4key="videos/${id}.mp4"
-        json="$json, \"mp4Key\": {\"S\": \"$mp4key\"}"
-    fi
+    # Always add videoKey (empty by default)
+    json="$json, \"videoKey\": {\"S\": \"\"}"
+    
+    # Always add imageKey (empty by default)
+    json="$json, \"imageKey\": {\"S\": \"\"}"
     
     json="$json}"
     echo "$json"
@@ -142,31 +131,33 @@ interactive_mode() {
     [ -z "$title" ] && title="${SONG_TITLES[$RANDOM % ${#SONG_TITLES[@]}]}"
     
     echo ""
-    echo "Enter lyrics (press Ctrl+D when done, or leave empty for no lyrics):"
+    echo "Enter lyrics (press Ctrl+D when done, or leave empty for 'SAMPLE'):"
     lyrics=$(cat)
+    [ -z "$lyrics" ] && lyrics="SAMPLE"
     
     echo ""
-    read -p "Has MP3? (y/n, default: n): " has_mp3
-    read -p "Has MP4? (y/n, default: n): " has_mp4
+    read -p "Audio S3 key (leave empty for none): " audio_key
+    read -p "Video S3 key (leave empty for none): " video_key
+    read -p "Image S3 key (leave empty for none): " image_key
     
     local id=$(generate_uuid)
     local timestamp=$(get_timestamp)
     
-    # Build JSON
+    # Build JSON with all fields
     local json="{\"id\": {\"S\": \"$id\"}, \"createdAt\": {\"S\": \"$timestamp\"}, \"updatedAt\": {\"S\": \"$timestamp\"}, \"title\": {\"S\": \"$title\"}"
     
-    if [ -n "$lyrics" ]; then
-        lyrics=$(echo "$lyrics" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')
-        json="$json, \"lyrics\": {\"S\": \"$lyrics\"}"
-    fi
+    # Always add lyrics (escape for JSON)
+    lyrics=$(echo "$lyrics" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//')
+    json="$json, \"lyrics\": {\"S\": \"$lyrics\"}"
     
-    if [ "$has_mp3" = "y" ] || [ "$has_mp3" = "Y" ]; then
-        json="$json, \"mp3Key\": {\"S\": \"songs/${id}.mp3\"}"
-    fi
+    # Always add audioKey (empty if not provided)
+    json="$json, \"audioKey\": {\"S\": \"${audio_key:-}\"}"
     
-    if [ "$has_mp4" = "y" ] || [ "$has_mp4" = "Y" ]; then
-        json="$json, \"mp4Key\": {\"S\": \"videos/${id}.mp4\"}"
-    fi
+    # Always add videoKey (empty if not provided)
+    json="$json, \"videoKey\": {\"S\": \"${video_key:-}\"}"
+    
+    # Always add imageKey (empty if not provided)
+    json="$json, \"imageKey\": {\"S\": \"${image_key:-}\"}"
     
     json="$json}"
     

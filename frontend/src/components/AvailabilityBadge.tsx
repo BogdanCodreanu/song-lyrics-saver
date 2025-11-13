@@ -3,7 +3,7 @@
 import { Icon } from '@iconify/react';
 
 interface IAvailabilityBadgeProps {
-  type: 'lyrics' | 'song' | 'video';
+  type: 'lyrics' | 'song' | 'video' | 'image';
   available: boolean;
 }
 
@@ -25,6 +25,11 @@ export default function AvailabilityBadge(props: IAvailabilityBadgeProps) {
       icon: 'mdi:video',
       label: 'Video',
       availableClass: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+    },
+    image: {
+      icon: 'mdi:image',
+      label: 'Image',
+      availableClass: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
     },
   };
 

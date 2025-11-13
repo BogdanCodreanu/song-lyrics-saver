@@ -12,7 +12,12 @@ export class InfraStack extends Stack {
     const bucket = new s3.Bucket(this, 'CapoeiraSongsBucket', {
       bucketName: 'alemar-capoeira-songs',
       versioned: true,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      blockPublicAccess: new s3.BlockPublicAccess({
+        blockPublicAcls: true,
+        blockPublicPolicy: false, // Allow bucket policies for public access
+        ignorePublicAcls: true,
+        restrictPublicBuckets: false,
+      }),
       enforceSSL: true,
       removalPolicy: RemovalPolicy.RETAIN,
       cors: [
@@ -30,6 +35,16 @@ export class InfraStack extends Stack {
         },
       ],
     });
+
+    // Allow public read access to images/ prefix
+    bucket.addToResourcePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        principals: [new iam.AnyPrincipal()],
+        actions: ['s3:GetObject'],
+        resources: [`${bucket.bucketArn}/images/*`],
+      })
+    );
 
     // DynamoDB table with just "id" partition key (single-env, pay-per-request)
     const table = new dynamodb.Table(this, 'CapoeiraSongsTable', {
