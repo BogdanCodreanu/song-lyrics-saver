@@ -12,9 +12,7 @@ const client = new DynamoDBClient({
 
 const docClient = DynamoDBDocumentClient.from(client);
 
-const TABLE_NAME =
-  process.env.DYNAMODB_TABLE_NAME ||
-  'SongLyricsSaverInfraStack-LyricsTableFE171BED-138XCG5740QS0';
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'alemar-capoeira-songs';
 
 export async function getAllSongs(): Promise<CapoeiraSong[]> {
   try {

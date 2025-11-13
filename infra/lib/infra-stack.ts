@@ -9,7 +9,8 @@ export class InfraStack extends Stack {
     super(scope, id, props);
 
     // S3 bucket for lyrics with versioning and CORS for Next.js
-    const bucket = new s3.Bucket(this, 'LyricsBucket', {
+    const bucket = new s3.Bucket(this, 'CapoeiraSongsBucket', {
+      bucketName: 'alemar-capoeira-songs',
       versioned: true,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       enforceSSL: true,
@@ -31,7 +32,8 @@ export class InfraStack extends Stack {
     });
 
     // DynamoDB table with just "id" partition key (single-env, pay-per-request)
-    const table = new dynamodb.Table(this, 'LyricsTable', {
+    const table = new dynamodb.Table(this, 'CapoeiraSongsTable', {
+      tableName: 'alemar-capoeira-songs',
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.RETAIN,
@@ -39,7 +41,7 @@ export class InfraStack extends Stack {
 
     // IAM User for Vercel (access keys created manually after deploy)
     const vercelUser = new iam.User(this, 'VercelUser', {
-      userName: 'vercel-lyrics-app',
+      userName: 'vercel-capoeira-songs-app',
     });
 
     // Grant S3 read/write and DynamoDB read/write data to the user
