@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 export async function GET() {
   try {
     const songs = await getAllSongs();
-    songs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    songs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return NextResponse.json({ songs });
   } catch (error) {
     console.error('Error in GET /api/songs:', error);
