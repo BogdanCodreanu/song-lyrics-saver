@@ -28,6 +28,8 @@ async function getMetadataPresignedUrl(imageKey: string): Promise<string | undef
 
     // Expires in 7 days (604800 seconds) - suitable for metadata caching
     const url = await getSignedUrl(s3Client, command, { expiresIn: 604800 });
+
+    console.log('signed url for metadata', url);
     return url;
   } catch (error) {
     console.error('Error generating presigned URL for metadata:', error);
