@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSongStore } from '@/lib/store';
 import SongCard from './SongCard';
@@ -10,13 +10,40 @@ interface ISongListProps {}
 export default function SongList(props: ISongListProps) {
   const router = useRouter();
   const { songs, loading, error, fetchSongs } = useSongStore();
+  const [loadingCardId, setLoadingCardId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const isNavigatingRef = useRef(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchSongs();
   }, [fetchSongs]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleCardClick = (id: string) => {
-    router.push(`/songs/${id}`);
+    // Prevent multiple navigations
+    if (isNavigatingRef.current) return;
+    
+    isNavigatingRef.current = true;
+    setLoadingCardId(id);
+    
+    // Fallback timeout to clear stuck state (8 seconds)
+    timeoutRef.current = setTimeout(() => {
+      setLoadingCardId(null);
+      isNavigatingRef.current = false;
+    }, 8000);
+    
+    startTransition(() => {
+      router.push(`/songs/${id}`);
+    });
   };
 
   if (loading) {
@@ -55,6 +82,7 @@ export default function SongList(props: ISongListProps) {
           song={song}
           index={index}
           onClick={handleCardClick}
+          loading={loadingCardId === song.id}
         />
       ))}
     </div>

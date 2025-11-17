@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import moment from 'moment';
 import { Icon } from '@iconify/react';
 import ReactMarkdown from 'react-markdown';
@@ -21,10 +21,11 @@ interface ISongCardProps {
   };
   index: number;
   onClick: (id: string) => void;
+  loading?: boolean;
 }
 
 export default function SongCard(props: ISongCardProps) {
-  const { song, index, onClick } = props;
+  const { song, index, onClick, loading = false } = props;
 
   return (
     <motion.div
@@ -32,13 +33,25 @@ export default function SongCard(props: ISongCardProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
-      onClick={() => onClick(song.id)}
-      className="bg-white dark:bg-zinc-800 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden cursor-pointer"
+      onClick={() => !loading && onClick(song.id)}
+      className={`bg-white dark:bg-zinc-800 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden relative ${
+        loading ? 'pointer-events-none' : 'cursor-pointer'
+      }`}
+      role="button"
+      tabIndex={loading ? -1 : 0}
+      aria-busy={loading}
+      aria-disabled={loading}
+      onKeyDown={(e) => {
+        if (!loading && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          onClick(song.id);
+        }
+      }}
     >
       <div className="bg-linear-to-r from-orange-500 to-yellow-500 h-2"></div>
       
       {/* Horizontal Layout: Image on left, Details on right */}
-      <div className="flex items-stretch h-full">
+      <div className={`flex items-stretch h-full transition-opacity duration-200 ${loading ? 'opacity-50' : ''}`}>
         {/* Image Section - Compact square on mobile, full height on desktop */}
         {song.imageKey && song.imageKey !== '' ? (
           <div className="w-32 sm:w-48 shrink-0 aspect-square sm:aspect-auto overflow-hidden bg-zinc-100 dark:bg-zinc-900">
@@ -96,7 +109,24 @@ export default function SongCard(props: ISongCardProps) {
           </div>
         </div>
       </div>
+
+      {/* Loading Overlay */}
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center rounded-lg z-20"
+          >
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/60 border-t-transparent"></div>
+            <span className="sr-only" aria-live="polite">
+              Loading
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
-
