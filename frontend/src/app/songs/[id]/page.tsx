@@ -3,9 +3,36 @@ import { getSongById } from '@/lib/dynamodb';
 import SongDetailClient from '@/components/SongDetailClient';
 import { currentUser } from '@clerk/nextjs/server';
 import { Metadata } from 'next';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 interface ISongDetailPageProps {
   params: Promise<{ id: string }>;
+}
+
+// Helper function to generate presigned URL for metadata (7-day expiration)
+async function getMetadataPresignedUrl(imageKey: string): Promise<string | undefined> {
+  try {
+    const s3Client = new S3Client({
+      region: process.env.AWS_REGION || 'eu-central-1',
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    });
+
+    const command = new GetObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME || 'alemar-capoeira-songs',
+      Key: imageKey,
+    });
+
+    // Expires in 7 days (604800 seconds) - suitable for metadata caching
+    const url = await getSignedUrl(s3Client, command, { expiresIn: 604800 });
+    return url;
+  } catch (error) {
+    console.error('Error generating presigned URL for metadata:', error);
+    return undefined;
+  }
 }
 
 export async function generateMetadata(props: ISongDetailPageProps): Promise<Metadata> {
@@ -28,9 +55,9 @@ export async function generateMetadata(props: ISongDetailPageProps): Promise<Met
         .substring(0, 150) + '...'
     : 'View the lyrics and media for this Capoeira song';
 
-  // Build S3 image URL if imageKey exists
+  // Generate presigned URL for image if imageKey exists
   const imageUrl = song.imageKey
-    ? `https://${process.env.NEXT_PUBLIC_S3_BUCKET_NAME || 'alemar-capoeira-songs'}.s3.${process.env.NEXT_PUBLIC_AWS_REGION || 'eu-central-1'}.amazonaws.com/${song.imageKey}`
+    ? await getMetadataPresignedUrl(song.imageKey)
     : undefined;
 
   return {
@@ -66,4 +93,3 @@ export default async function SongDetailPage(props: ISongDetailPageProps) {
 
   return <SongDetailClient song={song} isAdmin={isAdmin} />;
 }
-
