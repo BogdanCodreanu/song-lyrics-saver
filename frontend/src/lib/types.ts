@@ -7,4 +7,5 @@ export interface CapoeiraSong {
   audioKey?: string; // S3 bucket key for audio
   videoKey?: string; // S3 bucket key for video
   imageKey?: string; // S3 bucket key for image
+  metadataImageKey?: string; // S3 bucket key for 1.91:1 landscape metadata image
 }

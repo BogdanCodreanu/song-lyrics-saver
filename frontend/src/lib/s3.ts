@@ -50,7 +50,7 @@ export async function deleteS3Object(key: string): Promise<void> {
   await s3Client.send(command);
 }
 
-export function generateS3Key(type: 'audio' | 'video' | 'image', filename: string): string {
+export function generateS3Key(type: 'audio' | 'video' | 'image' | 'metadata-image', filename: string): string {
   const timestamp = Date.now();
   const cleanFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
   
@@ -58,8 +58,8 @@ export function generateS3Key(type: 'audio' | 'video' | 'image', filename: strin
     audio: 'audio',
     video: 'videos',
     image: 'images',
+    'metadata-image': 'images/metadata',
   }[type];
 
   return `${prefix}/${timestamp}-${cleanFilename}`;
 }
-

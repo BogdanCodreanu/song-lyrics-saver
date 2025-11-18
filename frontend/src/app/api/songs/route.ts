@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     await requireAdmin();
 
     const body = await request.json();
-    const { title, lyrics, audioKey, videoKey, imageKey } = body;
+    const { title, lyrics, audioKey, videoKey, imageKey, metadataImageKey } = body;
 
     if (!title) {
       return NextResponse.json(
@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       audioKey: audioKey || '',
       videoKey: videoKey || '',
       imageKey: imageKey || '',
+      metadataImageKey: metadataImageKey || '',
       createdAt: now,
       updatedAt: now,
     };

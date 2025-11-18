@@ -28,8 +28,6 @@ async function getMetadataPresignedUrl(imageKey: string): Promise<string | undef
 
     // Expires in 7 days (604800 seconds) - suitable for metadata caching
     const url = await getSignedUrl(s3Client, command, { expiresIn: 604800 });
-
-    console.log('signed url for metadata', url);
     return url;
   } catch (error) {
     console.error('Error generating presigned URL for metadata:', error);
@@ -57,9 +55,12 @@ export async function generateMetadata(props: ISongDetailPageProps): Promise<Met
         .substring(0, 150) + '...'
     : 'View the lyrics and media for this Capoeira song';
 
-  // Generate presigned URL for image if imageKey exists
-  const imageUrl = song.imageKey
-    ? await getMetadataPresignedUrl(song.imageKey)
+  // Prefer metadataImageKey (1.91:1 landscape) for social previews, fallback to regular imageKey
+  const imageKeyForMetadata = song.metadataImageKey || song.imageKey;
+  
+  // Generate presigned URL for image if a key exists
+  const imageUrl = imageKeyForMetadata
+    ? await getMetadataPresignedUrl(imageKeyForMetadata)
     : undefined;
 
   return {
@@ -68,7 +69,12 @@ export async function generateMetadata(props: ISongDetailPageProps): Promise<Met
     openGraph: {
       title: song.title,
       description: lyricsPreview,
-      images: imageUrl ? [{ url: imageUrl, alt: song.title }] : [],
+      images: imageUrl ? [{ 
+        url: imageUrl, 
+        alt: song.title,
+        width: 1200,
+        height: 630,
+      }] : [],
       type: 'music.song',
     },
     twitter: {

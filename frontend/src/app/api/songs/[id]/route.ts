@@ -42,7 +42,7 @@ export async function PUT(
 
     const { id } = await context.params;
     const body = await request.json();
-    const { title, lyrics, audioKey, videoKey, imageKey, filesToDelete } = body;
+    const { title, lyrics, audioKey, videoKey, imageKey, metadataImageKey, filesToDelete } = body;
 
     // Get existing song to handle file deletions
     const existingSong = await getSongById(id);
@@ -66,12 +66,33 @@ export async function PUT(
       }
     }
 
+    // Handle metadataImageKey changes/deletions
+    if (metadataImageKey !== undefined) {
+      // If setting to empty string or explicitly removing
+      if (!metadataImageKey && existingSong.metadataImageKey) {
+        try {
+          await deleteS3Object(existingSong.metadataImageKey);
+        } catch (err) {
+          console.error(`Failed to delete metadata image: ${existingSong.metadataImageKey}`, err);
+        }
+      }
+      // If replacing with a new key
+      else if (metadataImageKey && existingSong.metadataImageKey && metadataImageKey !== existingSong.metadataImageKey) {
+        try {
+          await deleteS3Object(existingSong.metadataImageKey);
+        } catch (err) {
+          console.error(`Failed to delete old metadata image: ${existingSong.metadataImageKey}`, err);
+        }
+      }
+    }
+
     const updates: any = {};
     if (title !== undefined) updates.title = title;
     if (lyrics !== undefined) updates.lyrics = lyrics;
     if (audioKey !== undefined) updates.audioKey = audioKey;
     if (videoKey !== undefined) updates.videoKey = videoKey;
     if (imageKey !== undefined) updates.imageKey = imageKey;
+    if (metadataImageKey !== undefined) updates.metadataImageKey = metadataImageKey;
 
     const updatedSong = await updateSong(id, updates);
 
@@ -116,6 +137,7 @@ export async function DELETE(
     if (song.audioKey) await deleteS3Object(song.audioKey);
     if (song.videoKey) await deleteS3Object(song.videoKey);
     if (song.imageKey) await deleteS3Object(song.imageKey);
+    if (song.metadataImageKey) await deleteS3Object(song.metadataImageKey);
 
     // Delete song from database
     await deleteSong(id);
@@ -137,4 +159,3 @@ export async function DELETE(
     );
   }
 }
-
