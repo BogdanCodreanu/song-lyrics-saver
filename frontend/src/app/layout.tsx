@@ -15,16 +15,16 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "🥁 Capoeira Songs",
-  description: "Learn Capoeira lyrics and songs. Practice with lyrics and recorded audio.",
+  description: "Learn traditional Capoeira lyrics and songs. Practice call-and-response with audio and video references.",
   openGraph: {
     title: "🥁 Capoeira Songs",
-    description: "Learn Capoeira lyrics and songs. Practice with lyrics and recorded audio.",
+    description: "Learn traditional Capoeira lyrics and songs. Practice call-and-response with audio and video references.",
     type: "website",
   },
   twitter: {
     card: "summary",
     title: "🥁 Capoeira Songs",
-    description: "Learn Capoeira lyrics and songs. Practice with lyrics and recorded audio.",
+    description: "Learn traditional Capoeira lyrics and songs. Practice call-and-response with audio and video references.",
   },
 };
 
@@ -39,7 +39,7 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          {children}
+            {children}
         </body>
       </html>
     </ClerkProvider>

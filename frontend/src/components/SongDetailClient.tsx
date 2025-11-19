@@ -12,6 +12,7 @@ import { CapoeiraSong } from '@/lib/types';
 import EditSongModal from './EditSongModal';
 import ReactPlayer from 'react-player';
 import { useSongStore } from '@/lib/store';
+import posthog from 'posthog-js';
 
 interface ISongDetailClientProps {
   song: CapoeiraSong;

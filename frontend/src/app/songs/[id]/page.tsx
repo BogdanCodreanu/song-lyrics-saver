@@ -50,15 +50,24 @@ export async function generateMetadata(props: ISongDetailPageProps): Promise<Met
   const hasLyrics = !!(song.lyrics && song.lyrics !== 'SAMPLE' && song.lyrics.trim().length > 0);
   const hasAudio = !!(song.audioKey && song.audioKey.trim().length > 0);
   const hasVideo = !!(song.videoKey && song.videoKey.trim().length > 0);
+  const hasMediaReference = hasAudio || hasVideo;
   
   const availability: string[] = [];
   if (hasLyrics) availability.push('📝 Lyrics');
   if (hasAudio) availability.push('🎵 Audio');
   if (hasVideo) availability.push('🎥 Video');
   
-  const availabilityDescription = availability.length > 0 
-    ? availability.join(' | ')
-    : '📝 Learn the lyrics to this Capoeira song';
+  let availabilityDescription: string;
+  if (hasLyrics && hasMediaReference) {
+    // Has lyrics + at least one media (audio or video)
+    availabilityDescription = `${availability.join(' | ')} - Practice with audio reference`;
+  } else if (hasLyrics) {
+    // Only lyrics, no media
+    availabilityDescription = '📝 Lyrics - Learn this Capoeira song';
+  } else {
+    // No content or edge case
+    availabilityDescription = 'Learn this Capoeira song';
+  }
 
   // Prefer metadataImageKey (1.91:1 landscape) for social previews, fallback to regular imageKey
   const imageKeyForMetadata = song.metadataImageKey || song.imageKey;
@@ -68,7 +77,7 @@ export async function generateMetadata(props: ISongDetailPageProps): Promise<Met
     ? await getMetadataPresignedUrl(imageKeyForMetadata)
     : undefined;
 
-  const title = `🎵 ${song.title}`;
+  const title = `${song.title}`;
 
   return {
     title,
