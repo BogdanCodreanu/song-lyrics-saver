@@ -14,8 +14,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Capoeira Songs",
-  description: "Collection of traditional capoeira music and lyrics",
+  title: "🥁 Capoeira Songs",
+  description: "Learn Capoeira lyrics and songs. Practice with lyrics and recorded audio.",
+  openGraph: {
+    title: "🥁 Capoeira Songs",
+    description: "Learn Capoeira lyrics and songs. Practice with lyrics and recorded audio.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "🥁 Capoeira Songs",
+    description: "Learn Capoeira lyrics and songs. Practice with lyrics and recorded audio.",
+  },
 };
 
 export default function RootLayout({

@@ -46,14 +46,19 @@ export async function generateMetadata(props: ISongDetailPageProps): Promise<Met
     };
   }
 
-  // Extract first portion of lyrics for description (remove markdown and truncate)
-  const lyricsPreview = song.lyrics && song.lyrics !== 'SAMPLE'
-    ? song.lyrics
-        .replace(/[#*_~`]/g, '') // Remove markdown formatting
-        .replace(/\n+/g, ' ') // Replace line breaks with spaces
-        .trim()
-        .substring(0, 150) + '...'
-    : 'View the lyrics and media for this Capoeira song';
+  // Build availability description based on what content is available
+  const hasLyrics = !!(song.lyrics && song.lyrics !== 'SAMPLE' && song.lyrics.trim().length > 0);
+  const hasAudio = !!(song.audioKey && song.audioKey.trim().length > 0);
+  const hasVideo = !!(song.videoKey && song.videoKey.trim().length > 0);
+  
+  const availability: string[] = [];
+  if (hasLyrics) availability.push('📝 Lyrics');
+  if (hasAudio) availability.push('🎵 Audio');
+  if (hasVideo) availability.push('🎥 Video');
+  
+  const availabilityDescription = availability.length > 0 
+    ? availability.join(' | ')
+    : '📝 Learn the lyrics to this Capoeira song';
 
   // Prefer metadataImageKey (1.91:1 landscape) for social previews, fallback to regular imageKey
   const imageKeyForMetadata = song.metadataImageKey || song.imageKey;
@@ -63,12 +68,14 @@ export async function generateMetadata(props: ISongDetailPageProps): Promise<Met
     ? await getMetadataPresignedUrl(imageKeyForMetadata)
     : undefined;
 
+  const title = `🎵 ${song.title}`;
+
   return {
-    title: `${song.title}`,
-    description: lyricsPreview,
+    title,
+    description: availabilityDescription,
     openGraph: {
-      title: song.title,
-      description: lyricsPreview,
+      title,
+      description: availabilityDescription,
       images: imageUrl ? [{ 
         url: imageUrl, 
         alt: song.title,
@@ -79,8 +86,8 @@ export async function generateMetadata(props: ISongDetailPageProps): Promise<Met
     },
     twitter: {
       card: 'summary_large_image',
-      title: song.title,
-      description: lyricsPreview,
+      title,
+      description: availabilityDescription,
       images: imageUrl ? [imageUrl] : [],
     },
   };

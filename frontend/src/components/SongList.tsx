@@ -34,16 +34,8 @@ export default function SongList(props: ISongListProps) {
     
     isNavigatingRef.current = true;
     setLoadingCardId(id);
+    router.push(`/songs/${id}`);
     
-    // Fallback timeout to clear stuck state (8 seconds)
-    timeoutRef.current = setTimeout(() => {
-      setLoadingCardId(null);
-      isNavigatingRef.current = false;
-    }, 8000);
-    
-    startTransition(() => {
-      router.push(`/songs/${id}`);
-    });
   };
 
   if (loading) {
