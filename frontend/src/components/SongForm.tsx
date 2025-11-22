@@ -40,6 +40,7 @@ export default function SongForm(props: ISongFormProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [metadataImageBlob, setMetadataImageBlob] = useState<Blob | null>(null);
   const [metadataImagePreview, setMetadataImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [showCropper, setShowCropper] = useState(false);
@@ -64,6 +65,23 @@ export default function SongForm(props: ISongFormProps) {
       return () => URL.revokeObjectURL(url);
     }
   }, [metadataImageBlob]);
+
+  // Create preview from image file
+  useEffect(() => {
+    if (imageFile) {
+      const url = URL.createObjectURL(imageFile);
+      setImagePreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else if (imageKey) {
+      // Fetch existing image preview
+      fetch(`/api/media/presigned-url?key=${encodeURIComponent(imageKey)}`)
+        .then(res => res.json())
+        .then(data => setImagePreview(data.url))
+        .catch(err => console.error('Failed to fetch image preview:', err));
+    } else {
+      setImagePreview(null);
+    }
+  }, [imageFile, imageKey]);
 
   const fetchMetadataImagePreview = async (key: string) => {
     try {
@@ -93,6 +111,7 @@ export default function SongForm(props: ISongFormProps) {
     } else if (type === 'image') {
       setImageKey('');
       setImageFile(null);
+      setImagePreview(null);
     } else if (type === 'metadata-image') {
       setMetadataImageKey('');
       setMetadataImageBlob(null);
@@ -106,7 +125,8 @@ export default function SongForm(props: ISongFormProps) {
 
     // Check if it's an image
     if (file.type.startsWith('image/')) {
-      // Open cropper for metadata image
+      // Set the original image file AND open cropper for metadata image
+      setImageFile(file);
       setPendingImageFile(file);
       setShowCropper(true);
     } else {
@@ -116,7 +136,14 @@ export default function SongForm(props: ISongFormProps) {
   };
 
   const handleCropExistingImage = async () => {
-    // If we have an existing image key, fetch it and open cropper
+    // If we have a newly selected image file, use it directly
+    if (imageFile) {
+      setPendingImageFile(imageFile);
+      setShowCropper(true);
+      return;
+    }
+    
+    // Otherwise, fetch the existing image key
     if (!imageKey) return;
     
     try {
@@ -373,22 +400,39 @@ export default function SongForm(props: ISongFormProps) {
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-2">
             Upload an image to create a 1.91:1 cropped version for social media previews.
           </p>
-          {imageKey && !imageFile && (
-            <div className="mb-2 text-sm text-zinc-600 dark:text-zinc-400 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Icon icon="mdi:check-circle" className="w-4 h-4 text-green-600" />
-                Current: {imageKey.split('/').pop()}
+          
+          {/* Image Preview */}
+          {(imageKey || imageFile) && imagePreview && (
+            <div className="mb-3 p-3 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-700">
+              <div className="flex items-start gap-3">
+                <img 
+                  src={imagePreview} 
+                  alt="Image preview" 
+                  className="w-32 h-32 object-cover rounded border border-zinc-300 dark:border-zinc-600"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon icon="mdi:check-circle" className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      {imageFile ? 'New image selected' : 'Image set'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                    {imageFile ? imageFile.name : imageKey.split('/').pop()}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveFile('image', imageKey)}
+                  className="text-red-600 hover:text-red-700 flex items-center gap-1 text-xs flex-shrink-0"
+                >
+                  <Icon icon="mdi:delete" className="w-4 h-4" />
+                  Remove
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => handleRemoveFile('image', imageKey)}
-                className="text-red-600 hover:text-red-700 flex items-center gap-1 text-xs"
-              >
-                <Icon icon="mdi:delete" className="w-4 h-4" />
-                Remove
-              </button>
             </div>
           )}
+          
           <input
             type="file"
             accept="image/*"
@@ -444,30 +488,15 @@ export default function SongForm(props: ISongFormProps) {
             </div>
           )}
 
-          {imageKey && !metadataImageKey && !metadataImageBlob && (
+          {/* Show crop button based on state */}
+          {(imageKey || imageFile) && (
             <button
               type="button"
               onClick={handleCropExistingImage}
               className="px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center gap-2"
             >
               <Icon icon="mdi:crop" className="w-4 h-4" />
-              Crop Existing Image for Metadata
-            </button>
-          )}
-
-          {(metadataImageKey || metadataImageBlob) && (
-            <button
-              type="button"
-              onClick={() => {
-                if (imageKey) {
-                  handleCropExistingImage();
-                }
-              }}
-              disabled={!imageKey}
-              className="px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Icon icon="mdi:crop" className="w-4 h-4" />
-              Change Metadata Image
+              {(metadataImageKey || metadataImageBlob) ? 'Reselect Crop Again' : 'Crop Image for Metadata'}
             </button>
           )}
 
